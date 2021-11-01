@@ -7,62 +7,121 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
 
+    public LayerMask ground;
     public Rigidbody2D rb;
     // walking
+    [Header("Horiznotal")]
     public float step;
-    //jump
-    public bool on_ground;
-    public float jump_height;
+    public float inAirStep;
+    
+    // jump
+    [Header("Vertical")]
+    private bool on_ground;
+    public float jump_force;
+    public Transform groundPoint;
     // wall jump
-    public int on_wall=0; // between -1 and 1
-    // Start is called before the first frame update
+    [Header("Wall Jump")]
+    public Transform wallGrabPoint;
+
+    public float wallCounterTime=.3f, wallJumpForce;
+    private float wallCounter;
+    private bool canGrab, isGrabbing;
+
     void Start()
     {
         // get a rigidbody component
         rb = gameObject.GetComponent<Rigidbody2D>();
     }
-
-    // Update is called once per frame
+    
     void FixedUpdate()
     {
         // check inputs
-        CheckInputs();
-        // check if player is on the ground(7)
+        if (wallCounter <= 0f)
+        {
+            CheckInputs();   
+        }
+        else
+        {
+            wallCounter -= Time.deltaTime;
+        }
+        // check if player is on the ground(Layer ID:7)
         CheckIfGrounded();
-        // move player
-    
+        // animation stuff
+        animationStuff();
     }
 
     void CheckInputs()
     {
-        // magick
         float dirx = Input.GetAxisRaw("Horizontal");
-        rb.velocity = new Vector2(dirx*step, rb.velocity.y);
+        if (on_ground)
+        {
+            rb.velocity = new Vector2(dirx*step, rb.velocity.y);   
+        }
+        else
+        {
+            rb.velocity = new Vector2(dirx*inAirStep, rb.velocity.y);   
+        }
+        if (Input.GetButton("Jump") && on_ground && !isGrabbing)
+        {
+            Jump();
+        }
+        // wal jump
+        wallJump();
     } 
 
     void CheckIfGrounded()
-    { 
+    {
         on_ground = false;
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.TransformDirection(direction: Vector3.down), 0.8f, LayerMask.GetMask("Ground"));
-        if (hit)
-        {
-            on_ground = true;
-        }
-        
-        Jump();
+        // to fix there is a more efficent way to do it
+        on_ground = Physics2D.OverlapCircle(groundPoint.position, .1f, ground) || Physics2D.OverlapCircle(new Vector3(groundPoint.position.x+.2f, groundPoint.position.y, groundPoint.position.z ), .1f, ground) || Physics2D.OverlapCircle(new Vector3(groundPoint.position.x-.2f, groundPoint.position.y, groundPoint.position.z ), .1f, ground);
     }
 
     void Jump()
     {
         // normal jump
-        if (Input.GetButton("Jump") && on_ground)
+        rb.velocity = new Vector2(rb.velocity.x, jump_force);
+    }
+    
+    // handle wall jump
+    void wallJump()
+    {
+        canGrab = Physics2D.OverlapCircle(wallGrabPoint.position, .2f, ground);
+        
+        isGrabbing = false;
+        if (canGrab && !on_ground)
         {
-            rb.velocity = new Vector2(rb.velocity.x, jump_height);
+            // don't ask
+            if (transform.localScale.x/Mathf.Abs(transform.localScale.x)==Input.GetAxisRaw("Horizontal")/Mathf.Abs(Input.GetAxisRaw("Horizontal")))
+            {
+                isGrabbing = true;
+            }
         }
-        // wall jump
-        if (Input.GetButton("Jump") && on_wall != 0)
+
+        rb.gravityScale = 2f;
+        if (isGrabbing)
         {
-            
+            if (rb.velocity.y <= 0f)
+            {
+                rb.gravityScale = 1f;   
+            }
+            if (Input.GetButton("Jump"))
+            {
+                wallCounter = wallCounterTime;
+                rb.velocity = new Vector2(transform.localScale.x/Mathf.Abs(transform.localScale.x)*-1f*wallJumpForce, jump_force);
+            }
+        }
+    }
+
+    void animationStuff()
+    {
+        // unity is stupid
+        if (rb.velocity.x < 0)
+        {
+            transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+        }
+        else if (rb.velocity.x > 0)
+        {
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
         }
     }
 }
