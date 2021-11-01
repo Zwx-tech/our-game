@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Animations;
 using UnityEngine;
 
 
@@ -9,11 +11,13 @@ public class PlayerMovement : MonoBehaviour
 
     public LayerMask ground;
     public Rigidbody2D rb;
+
+    public Animator anim;
     // walking
     [Header("Horiznotal")]
     public float step;
     public float inAirStep;
-    
+    public bool isWalking;
     // jump
     [Header("Vertical")]
     private bool on_ground;
@@ -22,11 +26,16 @@ public class PlayerMovement : MonoBehaviour
     // wall jump
     [Header("Wall Jump")]
     public Transform wallGrabPoint;
-
-    public float wallCounterTime=.3f, wallJumpForce;
-    private float wallCounter;
+    public float wallJumpTime=.3f, wallJumpForce;
+    private float wallCounter=0f;
     private bool canGrab, isGrabbing;
-
+    // dash
+    [Header("Dash")]
+    public float dashTime;
+    public float dashForce;
+    public float dashTimer;
+    public bool dashCouldown=true;
+    private float dashDir;
     void Start()
     {
         // get a rigidbody component
@@ -35,16 +44,21 @@ public class PlayerMovement : MonoBehaviour
     
     void FixedUpdate()
     {
-        // check inputs
+        // check inputs if not wall jump
         if (wallCounter <= 0f)
         {
             CheckInputs();   
         }
-        else
+        else if (wallCounter > 0f)
         {
             wallCounter -= Time.deltaTime;
         }
-        // check if player is on the ground(Layer ID:7)
+        // dash couldown
+        if (!dashCouldown && (on_ground||isGrabbing) && dashTimer<=0f)
+        {
+            dashCouldown = true;
+        }
+        // check if player is on the ground(Layer ID:8)
         CheckIfGrounded();
         // animation stuff
         animationStuff();
@@ -52,21 +66,35 @@ public class PlayerMovement : MonoBehaviour
 
     void CheckInputs()
     {
-        float dirx = Input.GetAxisRaw("Horizontal");
-        if (on_ground)
+        // dont move while dash
+        if (dashTimer <= 0)
         {
-            rb.velocity = new Vector2(dirx*step, rb.velocity.y);   
+            dashTimer = 0f;
+            float dirx = Input.GetAxisRaw("Horizontal");
+            if (on_ground)
+            {
+                rb.velocity = new Vector2(dirx*step, rb.velocity.y);   
+            }
+            else
+            {
+                rb.velocity = new Vector2(dirx * inAirStep, rb.velocity.y);
+            }
+            if (Input.GetButton("Jump") && on_ground && !isGrabbing)
+            {
+                Jump();
+            }
+            else if (Input.GetButton("Dash") && dashCouldown)
+            {
+                dash();
+            }
+            // wall jump
+            wallJump();
         }
         else
         {
-            rb.velocity = new Vector2(dirx*inAirStep, rb.velocity.y);   
+            rb.velocity = new Vector2(dashDir * dashForce, rb.velocity.y);
+            dashTimer -= Time.deltaTime;
         }
-        if (Input.GetButton("Jump") && on_ground && !isGrabbing)
-        {
-            Jump();
-        }
-        // wal jump
-        wallJump();
     } 
 
     void CheckIfGrounded()
@@ -106,7 +134,7 @@ public class PlayerMovement : MonoBehaviour
             }
             if (Input.GetButton("Jump"))
             {
-                wallCounter = wallCounterTime;
+                wallCounter = wallJumpTime;
                 rb.velocity = new Vector2(transform.localScale.x/Mathf.Abs(transform.localScale.x)*-1f*wallJumpForce, jump_force);
             }
         }
@@ -123,5 +151,21 @@ public class PlayerMovement : MonoBehaviour
         {
             transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
         }
+        if(Mathf.Abs(Input.GetAxisRaw("Horizontal"))>0f && on_ground)
+        {
+            isWalking = true;
+        }else
+        {
+            isWalking = false;  
+        }
+        anim.SetBool("isWalking", isWalking);
+    }
+
+    void dash()
+    {
+        // direction of dash is based on direction of player
+        dashDir = transform.localScale.x/Mathf.Abs(transform.localScale.x);
+        dashTimer = dashTime;
+        dashCouldown = false;
     }
 }
