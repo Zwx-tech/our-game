@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Timers;
 using UnityEditor.Animations;
 using UnityEngine;
 
@@ -17,7 +18,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Horiznotal")]
     public float step;
     public float inAirStep;
-    public bool isWalking;
+    private bool isWalking;
     // jump
     [Header("Vertical")]
     private bool on_ground;
@@ -33,8 +34,10 @@ public class PlayerMovement : MonoBehaviour
     [Header("Dash")]
     public float dashTime;
     public float dashForce;
-    public float dashTimer;
-    public bool dashCouldown=true;
+    private float dashTimer;
+    private bool dashCouldown=true;
+    private float dashCouldownTimer=0f;
+    public float dashCouldownTime;
     private float dashDir;
     void Start()
     {
@@ -54,9 +57,14 @@ public class PlayerMovement : MonoBehaviour
             wallCounter -= Time.deltaTime;
         }
         // dash couldown
-        if (!dashCouldown && (on_ground||isGrabbing) && dashTimer<=0f)
+        // to fix
+        if (!dashCouldown && (on_ground||isGrabbing) && dashTimer<=0f && dashCouldownTimer<=0f)
         {
             dashCouldown = true;
+        }
+        if (dashCouldownTimer > 0f)
+        {
+            dashCouldownTimer -= Time.deltaTime;
         }
         // check if player is on the ground(Layer ID:8)
         CheckIfGrounded();
@@ -163,9 +171,13 @@ public class PlayerMovement : MonoBehaviour
 
     void dash()
     {
-        // direction of dash is based on direction of player
-        dashDir = transform.localScale.x/Mathf.Abs(transform.localScale.x);
-        dashTimer = dashTime;
-        dashCouldown = false;
+        if (dashCouldownTimer <= 0f)
+        {
+            // direction of dash is based on direction of player
+            dashDir = transform.localScale.x/Mathf.Abs(transform.localScale.x);
+            dashTimer = dashTime;
+            dashCouldown = false;
+            dashCouldownTimer = dashCouldownTime;
+        }
     }
 }

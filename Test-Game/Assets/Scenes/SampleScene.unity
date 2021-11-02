@@ -1270,10 +1270,10 @@ GameObject:
   - component: {fileID: 1833907835}
   - component: {fileID: 1833907834}
   - component: {fileID: 1833907833}
-  - component: {fileID: 1833907832}
-  - component: {fileID: 1833907836}
   - component: {fileID: 1833907837}
+  - component: {fileID: 1833907836}
   - component: {fileID: 1833907838}
+  - component: {fileID: 1833907832}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1300,7 +1300,6 @@ MonoBehaviour:
   anim: {fileID: 1833907837}
   step: 4
   inAirStep: 3
-  isWalking: 0
   jump_force: 10
   groundPoint: {fileID: 153821604}
   wallGrabPoint: {fileID: 1908649224}
@@ -1308,8 +1307,7 @@ MonoBehaviour:
   wallJumpForce: 3
   dashTime: 0.2
   dashForce: 20
-  dashTimer: 0
-  dashCouldown: 1
+  dashCouldownTime: 0.5
 --- !u!61 &1833907833
 BoxCollider2D:
   m_ObjectHideFlags: 0
