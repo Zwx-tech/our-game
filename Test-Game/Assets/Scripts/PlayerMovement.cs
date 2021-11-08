@@ -167,6 +167,7 @@ public class PlayerMovement : MonoBehaviour
             isWalking = false;  
         }
         anim.SetBool("isWalking", isWalking);
+        anim.SetFloat("speed", step);
     }
 
     void dash()
