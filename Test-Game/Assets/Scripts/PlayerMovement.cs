@@ -57,7 +57,7 @@ public class PlayerMovement : MonoBehaviour
             wallCounter -= Time.deltaTime;
         }
         // dash couldown
-        // to fix
+        // to fix                                                                                                   
         if (!dashCouldown && (on_ground||isGrabbing) && dashTimer<=0f && dashCouldownTimer<=0f)
         {
             dashCouldown = true;
